@@ -22,14 +22,15 @@ typedef struct {
 
 // Function prototypes
 int read_file_to_get_points(const char *filename, Point** points); 
-void initialize_clusters(Cluster clusters[], int k, Point points[], int num_points);
+void initialize_random_clusters(Cluster clusters[], int k, Point points[], int num_points);
 double get_eucladian_distance(Point a, Point b);
 void assign_points_to_clusters(Point points[], int num_points, Cluster clusters[], int k);
 void update_centroids(Cluster clusters[], int k);
 bool centroids_changed(Cluster clusters[], Cluster old_clusters[], int k);
 void write_clusters(const char *filename, Cluster clusters[], int k, Point points[], int num_points);
-Point** get_user_centroids(int k);
-void freeCentroidMemory(Point** centroids, int k);
+void get_user_centroids(Cluster clusters[], int k, Point** centroids, Point points[], int num_points);
+void initialize_custom_clusters(Cluster clusters[], Point** centroids, int k, Point points[], int num_points);
+void freeCentroidMemory(int k, Point** centroids);
 
 int is_valid_txt_file(const char *path);
 char* get_file_path(); // Add the prototype for get_file_path
@@ -66,14 +67,30 @@ int main() {
         exit(1);
     }
     
-    initialize_clusters(clusters, k, points, num_points);
+    //-------------------------------
 
+    Point** centroids = malloc(k * sizeof(Point*));
+    if (centroids == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+    }
+
+    for (int i = 0; i < k; i++) {
+        centroids[i] = malloc(sizeof(Point));
+        if (centroids[i] == NULL) {
+            fprintf(stderr, "Memory allocation failed\n");
+            freeCentroidMemory(k, centroids);
+        }
+    }
+
+    char response[4];
+    printf("Do you want to enter the initial centroids? (yes/no): ");
+    scanf("%3s", response);
     
-    // Call the function to get user-defined centroids
-    Point** centroids = get_user_centroids(k);
-    
-    if(centroids == NULL){
-      initialize_clusters(clusters, k, points, num_points);
+    // Only proceed if user agrees to provide centroids
+    if (strcmp(response, "yes") == 0) {
+        get_user_centroids(clusters, k, centroids, points, num_points);
+    }else{
+        initialize_random_clusters(clusters, k, points, num_points);
     }
     
     for (int i = 0; i < MAX_ITERATIONS; i++) {
@@ -83,7 +100,7 @@ int main() {
             old_clusters[j] = clusters[j];
             clusters[j].num_points = 0; // Reset the number of points in each cluster
         }
-
+        
         assign_points_to_clusters(points, num_points, clusters, k);
         update_centroids(clusters, k);
 
@@ -103,7 +120,7 @@ int main() {
     }
     free(clusters); // Free the clusters array
     
-    freeCentroidMemory(centroids, k);
+    freeCentroidMemory(k, centroids);
 
     return 0;
 }
@@ -120,9 +137,7 @@ int is_valid_txt_file(const char *path) {
 
 
 char* get_file_path(char* file_path) {
-    
     char user_input[4];
-
     printf("Do you want to specify a file path? (yes/no): ");
     scanf("%3s", user_input);
 
@@ -142,57 +157,26 @@ char* get_file_path(char* file_path) {
     return file_path;
 }
 
-Point** get_user_centroids(int k) {
-    // Allocate memory for a 2D array of Point structs
-    Point** centroids = malloc(k * sizeof(Point*));
-    if (centroids == NULL) {
-        fprintf(stderr, "Memory allocation failed\n");
-        return NULL;
-    }
-
+void get_user_centroids(Cluster clusters[], int k, Point** centroids, Point points[], int num_points) {
+    printf("Enter %d pairs of x and y coordinates for the centroids (e.g., '1.0 2.0'):\n", k);
+        
     for (int i = 0; i < k; i++) {
-        centroids[i] = malloc(sizeof(Point));
-        if (centroids[i] == NULL) {
-            fprintf(stderr, "Memory allocation failed\n");
-            freeCentroidMemory(centroids, k);
-            return NULL;
+        printf("Centroid %d: ", i + 1);
+        // Validate that exactly two floating-point numbers are provided
+        if (scanf("%lf %lf", &centroids[i]->x, &centroids[i]->y) != 2) {
+            printf("Invalid input. Please enter two floating-point numbers separated by a space.\n");
+            i--; // Repeat this iteration for incorrect input
+            while (getchar() != '\n'); // Clear invalid input from buffer
+            continue;
         }
     }
 
-    char response[4];
-    printf("Do you want to enter the initial centroids? (yes/no): ");
-    scanf("%3s", response);
-    
-    // Only proceed if user agrees to provide centroids
-    if (strcmp(response, "yes") == 0) {
-        printf("Enter %d pairs of x and y coordinates for the centroids (e.g., '1.0 2.0'):\n", k);
-
-        for (int i = 0; i < k; i++) {
-            printf("Centroid %d: ", i + 1);
-
-            // Validate that exactly two floating-point numbers are provided
-            if (scanf("%lf %lf", &centroids[i]->x, &centroids[i]->y) != 2) {
-                printf("Invalid input. Please enter two floating-point numbers separated by a space.\n");
-                i--; // Repeat this iteration for incorrect input
-                while (getchar() != '\n'); // Clear invalid input from buffer
-                continue;
-            }
-        }
-        return centroids; // Return pointer to array of centroids
-    } else {
-        printf("Opt for automatic centroid selection!");
-        // If the user doesn't want to enter centroids, free allocated memory and return NULL
-        //freeCentroidMemory(centroids, k);
-        return NULL;
-    }
+    initialize_custom_clusters(clusters, centroids, k, points, num_points);
 }
 
-void freeCentroidMemory(Point** centroids, int k){
-    printf("Freeing!! ");
-    for (int i = 0; i < k; i++) {
+void freeCentroidMemory(int k, Point** centroids){
+    for (int i = 0; i < k; i++){
         free(centroids[i]);
     }
-    printf("Freeing!!! ");
     free(centroids);
-    printf("Freeing!!!! ");
 }
