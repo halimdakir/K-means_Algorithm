@@ -66,8 +66,7 @@ int main() {
         fprintf(stderr, "Memory allocation failed for clusters\n");
         exit(1);
     }
-    
-    //-------------------------------
+
 
     Point** centroids = malloc(k * sizeof(Point*));
     if (centroids == NULL) {
