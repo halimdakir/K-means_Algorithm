@@ -66,14 +66,29 @@ int read_file_to_get_points(const char *filename, Point** points) {
 }
 
 // Function to initialize clusters by randomly selecting initial centroids
-void initialize_clusters(Cluster clusters[], int k, Point points[], int num_points) {
+void initialize_random_clusters(Cluster clusters[], int k, Point points[], int num_points) {
     srand(time(NULL));
     for (int i = 0; i < k; i++) {
         int random_index = rand() % num_points; // Selecting an index of array(of size) randomly that points to a point as a centroid
-        clusters[i].centroid = points[random_index];
+        clusters[i].centroid = points[random_index]; 
+        
         printf("%.2f\t", clusters[i].centroid.x);
         printf("%.2f\n", clusters[i].centroid.y);
         clusters[i].num_points = 0; // Initialize the number of points in the cluster
+        clusters[i].points = malloc(num_points * sizeof(Point)); // Allocate memory for points in each cluster
+        if (clusters[i].points == NULL) {
+            fprintf(stderr, "Memory allocation failed for cluster points\n");
+            exit(1);
+        }
+    }
+}
+
+void initialize_custom_clusters(Cluster clusters[], Point** centroids, int k, Point points[], int num_points) {
+    for (int i = 0; i < k; i++) {
+        clusters[i].num_points = 0; // Initialize the number of points in the cluster
+        clusters[i].centroid.x = centroids[i]->x;
+        clusters[i].centroid.y = centroids[i]->y;
+        
         clusters[i].points = malloc(num_points * sizeof(Point)); // Allocate memory for points in each cluster
         if (clusters[i].points == NULL) {
             fprintf(stderr, "Memory allocation failed for cluster points\n");
@@ -91,6 +106,7 @@ double get_euclidean_distance(Point a, Point b) {
 void assign_points_to_clusters(Point points[], int num_points, Cluster clusters[], int k) {
     int updated_num_points = 0;
     for (int i = 0; i < num_points; i++) {
+        
         double min_distance = INFINITY;
         int cluster_index = 0;
 
