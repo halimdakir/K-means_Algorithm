@@ -26,7 +26,7 @@ int read_file_to_get_points(const char *filename, Point** points) {
     }
 
     int count = 0;
-    *points = malloc(k * sizeof(Point));  // Allocate initial memory for points (initially)
+    *points = malloc(k * sizeof(Point));  // Allocate initial memory for points
     
     char line[256];  // Buffer to hold each line of the file
     while (fgets(line, sizeof(line), file) != NULL) {
@@ -34,16 +34,16 @@ int read_file_to_get_points(const char *filename, Point** points) {
         // Attempt to parse two doubles from the line
         int result = sscanf(line, "%lf %lf", &x, &y);
 
-        // Check how many values were successfully parsed
-        if (result < 2) {
-            fprintf(stderr, "Invalid input format. Expected two doubles in line: '%s'\n", line);
-            continue;  // Skip to the next line
+        // Check how many values were successfully parsed in each line, we're epecting 2 floating points; for anything else we're skipping the scanned line
+        if (result != 2) {
+            fprintf(stderr, "Invalid input format found. Expected two doubles in line: '%s' - Skipping\n", line);
+            continue;  // Skip execution for this line and continue to the next line
         }
 
         // Check for NaN values after reading
         if (isnan(x) || isnan(y)) {
             fprintf(stderr, "Invalid point detected: (%f, %f) - Skipping\n", x, y);
-            continue;  // Skip this point
+            continue;  // Skip execution for this line and continue to the next line
         }
 
         // Store valid point
@@ -53,11 +53,13 @@ int read_file_to_get_points(const char *filename, Point** points) {
 
         // Reallocate if needed
         if (count % k == 0) {  // Reallocate more memory if needed
-            *points = realloc(*points, (count + k) * sizeof(Point));
-            if (*points == NULL) {
+            Point *new_points = realloc(*points, (count + k) * sizeof(Point));
+            if (new_points == NULL) {
+                free(*points);  // Free the original memory if reallocation fails
                 fprintf(stderr, "Memory allocation failed while reading points\n");
                 exit(1);
             }
+            *points = new_points;  // Update *points only if realloc succeeds
         }
     }
 
@@ -69,31 +71,30 @@ int read_file_to_get_points(const char *filename, Point** points) {
 void initialize_random_clusters(Cluster clusters[], int k, Point points[], int num_points) {
     srand(time(NULL));
     for (int i = 0; i < k; i++) {
-        int random_index = rand() % num_points; // Selecting an index of array(of size) randomly that points to a point as a centroid
-        clusters[i].centroid = points[random_index]; 
-        
-        printf("%.2f\t", clusters[i].centroid.x);
-        printf("%.2f\n", clusters[i].centroid.y);
-        clusters[i].num_points = 0; // Initialize the number of points in the cluster
-        clusters[i].points = malloc(num_points * sizeof(Point)); // Allocate memory for points in each cluster
-        if (clusters[i].points == NULL) {
-            fprintf(stderr, "Memory allocation failed for cluster points\n");
-            exit(1);
-        }
+        // Selecting an index of array(of size) randomly that points to a point as a centroid
+        int random_index = rand() % num_points;
+        clusters[i].centroid = points[random_index];
+        allocate_memory_cluster(clusters);
     }
 }
 
+// Function to initialize clusters according the selection of the user for initial centroids
 void initialize_custom_clusters(Cluster clusters[], Point** centroids, int k, Point points[], int num_points) {
     for (int i = 0; i < k; i++) {
-        clusters[i].num_points = 0; // Initialize the number of points in the cluster
         clusters[i].centroid.x = centroids[i]->x;
         clusters[i].centroid.y = centroids[i]->y;
-        
-        clusters[i].points = malloc(num_points * sizeof(Point)); // Allocate memory for points in each cluster
-        if (clusters[i].points == NULL) {
-            fprintf(stderr, "Memory allocation failed for cluster points\n");
-            exit(1);
-        }
+        allocate_memory_cluster(clusters);
+    }
+}
+
+
+void allocate_memory_cluster(Cluster clusters[]) {
+    clusters[i].num_points = 0;
+    clusters[i].points = malloc(num_points * sizeof(Point));
+
+    if (clusters[i].points == NULL) {
+        fprintf(stderr, "Memory allocation failed for cluster points\n");
+        exit(1);
     }
 }
 
@@ -106,7 +107,6 @@ double get_euclidean_distance(Point a, Point b) {
 void assign_points_to_clusters(Point points[], int num_points, Cluster clusters[], int k) {
     int updated_num_points = 0;
     for (int i = 0; i < num_points; i++) {
-        
         double min_distance = INFINITY;
         int cluster_index = 0;
 
@@ -136,9 +136,10 @@ void update_centroids(Cluster clusters[], int k) {
             sum_y += clusters[i].points[j].y;
         }
 
-        if (clusters[i].num_points > 0) { // Avoid division by zero
+        if (clusters[i].num_points > 0) { // Avoiding division by zero
             int mean_x = sum_x / clusters[i].num_points;
             int mean_y = sum_y / clusters[i].num_points;
+            // Update the centroids
             clusters[i].centroid.x = mean_x;
             clusters[i].centroid.y = mean_y;
         }
@@ -155,8 +156,6 @@ bool centroids_changed(Cluster clusters[], Cluster old_clusters[], int k) {
     }
     return false; // No change in centroids
 }
-
-
 
 // Function to write the cluster assignments to a file
 void write_clusters(const char *filename, Cluster clusters[], int k, Point points[], int num_points) {
