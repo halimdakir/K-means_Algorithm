@@ -36,14 +36,15 @@ void write_clusters(const char *filename, Cluster clusters[], int k, Point point
 void get_user_centroids(Cluster clusters[], int k, Point** centroids, Point points[], int num_points);
 void initialize_custom_clusters(Cluster clusters[], Point** centroids, int k, Point points[], int num_points);
 void freeCentroidMemory(int k, Point** centroids);
-void allocate_memory_cluster(Cluster clusters[]);
 bool is_valid_txt_file(const char *path);
 char* get_file_path();
 
 int main() {
     // Getting the path based on user's choice: default/user specified
-    char* file_path = malloc(256);  // Allocate memory for a string to hold the file path (256 bytes)
-    strcpy(file_path, get_file_path(file_path));  // Copy the file path returned by get_file_path() into the allocated file_path variable
+    // Allocate memory for a string to hold the file path (256 bytes)
+    char* file_path = malloc(256);
+    // Copy the file path
+    strcpy(file_path, get_file_path(file_path));
 
     // Call the function to get a valid number of clusters
     k = get_number_of_clusters();
@@ -77,6 +78,7 @@ int main() {
         // Only proceed if user agrees to provide centroids
         if (strcmp(response, "yes") == 0) {
             get_user_centroids(clusters, k, centroids, points, num_points);
+            break;
         } else if(strcmp(response, "no") == 0){
             initialize_random_clusters(clusters, k, points, num_points);
             break;
@@ -154,11 +156,14 @@ int get_number_of_clusters() {
     while (1) {
 
         if (scanf("%d", &k) != 1) {
+
             printf("Invalid input. Please enter a valid integer: ");
             while (getchar() != '\n');
 
         } else if (k <= 0) {
+
             printf("Please give a number greater than 0: ");
+
         } else {
             break;
         }

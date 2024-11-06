@@ -16,6 +16,7 @@ typedef struct {
 } Cluster;
 
 extern int k;  // Declaration of the global variable k
+allocate_memory_cluster(Cluster clusters[], int num_points, int i)
 
 // Function to read points from a file
 int read_file_to_get_points(const char *filename, Point** points) {
@@ -74,7 +75,7 @@ void initialize_random_clusters(Cluster clusters[], int k, Point points[], int n
         // Selecting an index of array(of size) randomly that points to a point as a centroid
         int random_index = rand() % num_points;
         clusters[i].centroid = points[random_index];
-        allocate_memory_cluster(clusters);
+        allocate_memory_cluster(clusters, num_points, i);
     }
 }
 
@@ -83,12 +84,12 @@ void initialize_custom_clusters(Cluster clusters[], Point** centroids, int k, Po
     for (int i = 0; i < k; i++) {
         clusters[i].centroid.x = centroids[i]->x;
         clusters[i].centroid.y = centroids[i]->y;
-        allocate_memory_cluster(clusters);
+        allocate_memory_cluster(clusters, num_points, i);
     }
 }
 
 
-void allocate_memory_cluster(Cluster clusters[]) {
+void allocate_memory_cluster(Cluster clusters[], int num_points, int i) {
     clusters[i].num_points = 0;
     clusters[i].points = malloc(num_points * sizeof(Point));
 
