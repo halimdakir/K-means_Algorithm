@@ -31,9 +31,10 @@ Implement the K-means clustering algorithm to cluster 2-dimensional data points 
 ## Usage
 1. Clone this repository or download the project to your local machine.
 2. Navigate to the project directory in your terminal.
-3. Run `make` to compile the program.
-4. Execute the program using `./kmeans`.
-5. Check `kmeans-output.txt` for the clustering results.
+3. Run `make clean` to compile the program.
+4. Run `make` to compile the program.
+5. Execute the program using `./kmeans`. 
+6. Check `kmeans-output.txt` for the clustering results.
 
 ## Build
 To build the project, run:
