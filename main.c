@@ -41,23 +41,17 @@ char* get_file_path();
 
 int main() {
     // Getting the path based on user's choice: default/user specified
-    // Allocate memory for a string to hold the file path (256 bytes)
-    char* file_path = malloc(256);
-    // Copy the file path
-    strcpy(file_path, get_file_path(file_path));
+    char* file_path = malloc(256);  // Allocate memory for a string to hold the file path (256 bytes)
+    strcpy(file_path, get_file_path(file_path));  // Copy the file path returned by get_file_path() into the allocated file_path variable
 
-    // Call the function to get a valid number of clusters
-    k = get_number_of_clusters();
+    k = get_number_of_clusters(); // Call the function to get a valid number of clusters
     Cluster* clusters = initializeClusters(k);
     Point** centroids = initializeCentroids(k);
+    
+    Point* points = NULL; // Change to pointer for dynamic allocation
 
-    // Change to pointer for dynamic allocation
-    Point* points = NULL;
-
-    // Invoke the function to read the input file to get data points
-    int num_points = read_file_to_get_points(file_path, &points);
-    // If no valid data found in the file
-    if (num_points <= 0){
+    int num_points = read_file_to_get_points(file_path, &points);// Invoke the function to read the input file to get data points
+    if (num_points <= 0){ // If no valid data found in the file
       printf("No data found to cluster!");
       exit(1);
     }
@@ -83,7 +77,7 @@ int main() {
             initialize_random_clusters(clusters, k, points, num_points);
             break;
         } else{
-            printf("Invalid input. Please enter 'yes' or 'no'.\n");
+            printf("Invalid input. Please enter 'yes' or 'no'.\n"); // Prompt again for valid input
         }
     }
     
@@ -92,30 +86,35 @@ int main() {
         Cluster old_clusters[k];
         for (int j = 0; j < k; j++) {
             old_clusters[j] = clusters[j];
+            
             clusters[j].num_points = 0; // Reset the number of points in each cluster
         }
         
         assign_points_to_clusters(points, num_points, clusters, k);
         update_centroids(clusters, k);
 
-        // Check for convergence & Centroids have not changed, exit loop
+        // Check for convergence
         if (!centroids_changed(clusters, old_clusters, k)) {
-            break;
+            break; // Centroids have not changed, exit loop
         }
     }
+
+    /*for(int i=0; i<4; i++){
+         printf("%d: (%.2f, %.2f)", i, clusters[i].centroid.x, clusters[i].centroid.y);
+    }*/
 
     // Write the clusting output in the output file
     write_clusters("kmeans-output.txt", clusters, k, points, num_points);
 
-    //Free allocated memories
-    free(points);
-    free(file_path);
-    freeCentroidMemory(k, centroids);
+    //Free allocated memory
+    free(points); // Free the memory allocated for the points array
+    free(file_path); // Free the memory allocated for the file path string
+    freeCentroidMemory(k, centroids); // Free the memory allocated for centroids
 
     for (int i = 0; i < k; i++) {
-        free(clusters[i].points);
+        free(clusters[i].points); // Free the memory allocated for each cluster's points
     }
-    free(clusters);
+    free(clusters); // Free the memory allocated for the clusters array
     
     return 0;
 }
@@ -150,31 +149,26 @@ Point** initializeCentroids(int k) {
 int get_number_of_clusters() {
     int k;
 
-    printf("Enter number of clusters: ");
+    printf("Enter number of clusters: "); // Asking user to specify the number of clusters
 
     // Loop until a valid integer is entered
     while (1) {
-
-        if (scanf("%d", &k) != 1) {
-
+        if (scanf("%d", &k) != 1) { // Check if the input is an integer
             printf("Invalid input. Please enter a valid integer: ");
-            while (getchar() != '\n');
-
-        } else if (k <= 0) {
-
+            while (getchar() != '\n'); // Clear the invalid input from the buffer
+        } else if (k <= 0) { // Check if k is greater than 0
             printf("Please give a number greater than 0: ");
-
         } else {
-            break;
+            break; // Valid input; exit the loop
         }
     }
 
-    return k;
+    return k; // Return the valid number of clusters
 }
 
 // Checking if the provided custom data file is valid or not
 bool is_valid_txt_file(const char *path) {
-    FILE *file = fopen(path, "r");
+    FILE *file = fopen(path, "r"); // Trying to open the file at the fiven path
     if (file) {
         fclose(file);
         int len = strlen(path);
@@ -189,16 +183,16 @@ char* get_file_path(char* file_path) {
     // Prompt until a valid response is given
     while (1) {
         printf("Do you want to specify a file path? (yes/no): ");
-        scanf("%3s", user_input);
+        scanf("%3s", user_input); // Read up to 3 characters to prevent overflow
 
         // Check if input is "yes" or "no"
         if (strcmp(user_input, "yes") == 0) {
             printf("Please enter the file path: ");
-            scanf("%255s", file_path);
+            scanf("%255s", file_path); // Read the file path (up to 255 characters)
 
             // Validate the file path
             if (is_valid_txt_file(file_path)) {
-                return file_path;
+                return file_path; // Return the valid file path
             } else {
                 printf("Invalid file path or the file is not in .txt format. Please enter a valid path.\n");
             }
@@ -206,7 +200,7 @@ char* get_file_path(char* file_path) {
             printf("Using the default file as input for data: '%s'\n", PREDEFINED_PATH);
             break;
         } else {
-            printf("Invalid input. Please enter 'yes' or 'no'.\n");
+            printf("Invalid input. Please enter 'yes' or 'no'.\n"); // Prompt again for valid input
         }
     }
 
@@ -224,8 +218,8 @@ void get_user_centroids(Cluster clusters[], int k, Point** centroids, Point poin
         // Validate that exactly two floating-point numbers are provided
         if (scanf("%lf %lf", &centroids[i]->x, &centroids[i]->y) != 2) {
             printf("Invalid input. Please enter two floating-point numbers separated by a space.\n");
-            i--;
-            while (getchar() != '\n');
+            i--; // Repeat this iteration for incorrect input
+            while (getchar() != '\n'); // Clear invalid input from buffer
             continue;
         }
     }

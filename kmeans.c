@@ -16,7 +16,6 @@ typedef struct {
 } Cluster;
 
 extern int k;  // Declaration of the global variable k
-allocate_memory_cluster(Cluster clusters[], int num_points, int i)
 
 // Function to read points from a file
 int read_file_to_get_points(const char *filename, Point** points) {
@@ -27,7 +26,7 @@ int read_file_to_get_points(const char *filename, Point** points) {
     }
 
     int count = 0;
-    *points = malloc(k * sizeof(Point));  // Allocate initial memory for points
+    *points = malloc(k * sizeof(Point));  // Allocate initial memory for points (initially)
     
     char line[256];  // Buffer to hold each line of the file
     while (fgets(line, sizeof(line), file) != NULL) {
@@ -65,37 +64,36 @@ int read_file_to_get_points(const char *filename, Point** points) {
     }
 
     fclose(file);
-    return count; // Return the number of points read
+    return count;
 }
 
 // Function to initialize clusters by randomly selecting initial centroids
 void initialize_random_clusters(Cluster clusters[], int k, Point points[], int num_points) {
     srand(time(NULL));
     for (int i = 0; i < k; i++) {
-        // Selecting an index of array(of size) randomly that points to a point as a centroid
-        int random_index = rand() % num_points;
-        clusters[i].centroid = points[random_index];
-        allocate_memory_cluster(clusters, num_points, i);
+        int random_index = rand() % num_points; // Selecting an index of array(of size) randomly that points to a point as a centroid
+        clusters[i].centroid = points[random_index]; 
+        clusters[i].num_points = 0; // Initialize the number of points in the cluster
+        clusters[i].points = malloc(num_points * sizeof(Point)); // Allocate memory for points in each cluster
+        if (clusters[i].points == NULL) {
+            fprintf(stderr, "Memory allocation failed for cluster points\n");
+            exit(1);
+        }
     }
 }
 
 // Function to initialize clusters according the selection of the user for initial centroids
 void initialize_custom_clusters(Cluster clusters[], Point** centroids, int k, Point points[], int num_points) {
     for (int i = 0; i < k; i++) {
-        clusters[i].centroid.x = centroids[i]->x;
+        clusters[i].num_points = 0; // Initialize the number of points in the cluster
+        clusters[i].centroid.x = centroids[i]->x; 
         clusters[i].centroid.y = centroids[i]->y;
-        allocate_memory_cluster(clusters, num_points, i);
-    }
-}
-
-
-void allocate_memory_cluster(Cluster clusters[], int num_points, int i) {
-    clusters[i].num_points = 0;
-    clusters[i].points = malloc(num_points * sizeof(Point));
-
-    if (clusters[i].points == NULL) {
-        fprintf(stderr, "Memory allocation failed for cluster points\n");
-        exit(1);
+        
+        clusters[i].points = malloc(num_points * sizeof(Point)); // Allocate memory for points in each cluster
+        if (clusters[i].points == NULL) {
+            fprintf(stderr, "Memory allocation failed for cluster points\n");
+            exit(1);
+        }
     }
 }
 
@@ -129,7 +127,7 @@ void assign_points_to_clusters(Point points[], int num_points, Cluster clusters[
 // Function to update the cluster centroids
 void update_centroids(Cluster clusters[], int k) {
     for (int i = 0; i < k; i++) {
-        double sum_x = 0, sum_y = 0;
+        float sum_x = 0, sum_y = 0;
 
         // Calculate the new centroid
         for (int j = 0; j < clusters[i].num_points; j++) {
@@ -138,8 +136,8 @@ void update_centroids(Cluster clusters[], int k) {
         }
 
         if (clusters[i].num_points > 0) { // Avoiding division by zero
-            int mean_x = sum_x / clusters[i].num_points;
-            int mean_y = sum_y / clusters[i].num_points;
+            float mean_x = sum_x / clusters[i].num_points;
+            float mean_y = sum_y / clusters[i].num_points;
             // Update the centroids
             clusters[i].centroid.x = mean_x;
             clusters[i].centroid.y = mean_y;
@@ -152,10 +150,11 @@ bool centroids_changed(Cluster clusters[], Cluster old_clusters[], int k) {
     for (int i = 0; i < k; i++) {
         if (clusters[i].centroid.x != old_clusters[i].centroid.x ||
             clusters[i].centroid.y != old_clusters[i].centroid.y) {
-            return true; // Centroids have changed
+                return true; // Centroids have changed
         }
     }
-    return false; // No change in centroids
+
+    return false;
 }
 
 // Function to write the cluster assignments to a file
@@ -167,6 +166,9 @@ void write_clusters(const char *filename, Cluster clusters[], int k, Point point
     }
     
     for (int j = 0; j < num_points; j++) {
+        /*if(j %100 == 0){
+            printf("\n Writing for: %d", j);
+        }*/
         // Loop through each cluster to find which one contains the point
         for (int i = 0; i < k; i++) {
             for (int l = 0; l < clusters[i].num_points; l++) {
