@@ -45,3 +45,5 @@ make
 
 ./kmeans
 
+## Visualisation
+![output](https://github.com/user-attachments/assets/a5ef5000-d3ca-47d9-86b5-ae25094cb53d)
