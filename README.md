@@ -36,6 +36,9 @@ Implement the K-means clustering algorithm to cluster 2-dimensional data points 
 5. Execute the program using `./kmeans`. 
 6. Check `kmeans-output.txt` for the clustering results.
 
+## Visualisation
+![output](https://github.com/user-attachments/assets/a5ef5000-d3ca-47d9-86b5-ae25094cb53d)
+
 ## Build
 To build the project, run:
 ```bash
@@ -44,6 +47,3 @@ make clean
 make
 
 ./kmeans
-
-## Visualisation
-![output](https://github.com/user-attachments/assets/a5ef5000-d3ca-47d9-86b5-ae25094cb53d)
